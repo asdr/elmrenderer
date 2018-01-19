@@ -1,6 +1,7 @@
+package-lock.json
+.DS_Store
 elm-stuff/
 node_modules/
 tmp/
 dist/
 yarn.lock
-

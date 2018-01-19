@@ -57,7 +57,8 @@ var commonConfig = {
 if (isDev === true) {
     module.exports = merge(commonConfig, {
         entry: [
-            'webpack-dev-server/client?http://localhost:8080',
+            'webpack-dev-server/client?http://localhost:8081',
+            'webpack/hot/only-dev-server',
             entryPath
         ],
         devServer: {
