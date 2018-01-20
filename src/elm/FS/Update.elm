@@ -1,10 +1,10 @@
 module FS.Update exposing (..)
 
-import FS.ActionDispatcher
+import FS.Core.ActionDispatcher exposing (dispatch)
 import FS.Commands exposing (savePlayerCmd)
 import FS.Models exposing (Model)
-import FS.Models.Core exposing (Player)
-import FS.Messages exposing (Msg)
+import FS.Models.Base exposing (Player)
+import FS.Messages exposing (Msg(..))
 import FS.Routing exposing (parseLocation)
 import RemoteData
 
@@ -12,31 +12,31 @@ import RemoteData
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        FS.Messages.OnFetchPlayers response ->
+        OnFetchPlayers response ->
             ( { model | players = response }, Cmd.none )
 
-        FS.Messages.OnLocationChange location ->
+        OnLocationChange location ->
             let
                 newRoute =
                     parseLocation location
             in
                 ( { model | route = newRoute }, Cmd.none )
 
-        FS.Messages.ChangeLevel player howMuch ->
+        ChangeLevel player howMuch ->
             let
                 updatedPlayer =
                     { player | level = player.level + howMuch }
             in
                 ( model, savePlayerCmd updatedPlayer )
 
-        FS.Messages.OnPlayerSave (Ok player) ->
+        OnPlayerSave (Ok player) ->
             ( updatePlayer model player, Cmd.none )
 
-        FS.Messages.OnPlayerSave (Err error) ->
+        OnPlayerSave (Err error) ->
             ( model, Cmd.none )
 
-        FS.Messages.OnFetchResponse response ->
-            FS.ActionDispatcher.dispatch model response
+        OnFetchResponse response ->
+            dispatch model response
 
 
 updatePlayer : Model -> Player -> Model

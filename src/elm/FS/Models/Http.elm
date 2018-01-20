@@ -3,7 +3,8 @@ module FS.Models.Http exposing (..)
 import Dict exposing (Dict)
 import Http
 import Xml exposing (Value)
-import FS.Models.Core
+import FS.Models.Base exposing (Event, ObjectType)
+import FS.Models.Delta exposing (Delta)
 
 
 type alias RequestURL =
@@ -17,10 +18,10 @@ type alias RequestMethod =
 type alias Request a =
     { applicationId : Int
     , applicationName : String
-    , objectType : FS.Models.Core.ObjectType a
-    , delta : FS.Models.Core.Delta
+    , objectType : ObjectType a
+    , delta : Delta
     , headers : List Http.Header
-    , events : List FS.Models.Core.Event
+    , events : List Event
     , keyCombination : String
     , requestNumber : Int
     , sessionId : Maybe String

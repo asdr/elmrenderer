@@ -1,6 +1,7 @@
-module FS.Utils exposing (..)
+module FS.Core.Utils exposing (..)
 
-import FS.Models.Core exposing (..)
+import FS.Models.Base exposing (Event(Open))
+import FS.Models.Delta exposing (Delta)
 
 
 concatWithSeparator : String -> String -> String -> String

@@ -1,6 +1,6 @@
 module FS.Players.Edit exposing (..)
 
-import FS.Models.Core exposing (Player)
+import FS.Models.Base exposing (Player)
 import FS.Messages exposing (Msg)
 import FS.Routing exposing (playersPath)
 import Html exposing (..)

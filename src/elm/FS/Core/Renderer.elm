@@ -1,4 +1,4 @@
-module FS.Renderer exposing (..)
+module FS.Core.Renderer exposing (..)
 
 import Html exposing (..)
 import FS.Messages exposing (Msg)

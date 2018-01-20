@@ -1,6 +1,6 @@
 module FS.Routing exposing (..)
 
-import FS.Models.Core exposing (Route(..))
+import FS.Models.Base exposing (Route(..))
 import Navigation exposing (Location)
 import UrlParser exposing (..)
 

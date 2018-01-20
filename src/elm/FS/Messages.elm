@@ -1,7 +1,7 @@
 module FS.Messages exposing (..)
 
 import Http
-import FS.Models.Core exposing (Player)
+import FS.Models.Base exposing (Player)
 import FS.Models.Http exposing (Response)
 import Navigation exposing (Location)
 import RemoteData exposing (WebData)

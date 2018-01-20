@@ -1,10 +1,11 @@
-module FS.Http exposing (..)
+module FS.Core.Http exposing (..)
 
 import Http
 import Xml.Decode
-import FS.Models.Core exposing (Event, ObjectType, Application, nullValue, servletUrl)
+import FS.Models.Application exposing (Application(Application))
+import FS.Models.Base exposing (Event, ObjectType, nullValue, servletUrl)
 import FS.Models.Http exposing (RequestURL, RequestMethod, Request, Response)
-import FS.Utils exposing (toEventCode, toDeltaXML)
+import FS.Core.Utils exposing (toEventCode, toDeltaXML)
 
 
 buildRequestBody : String -> String -> Request a -> Http.Body
@@ -14,10 +15,10 @@ buildRequestBody objectType objectDtlType request =
             request.applicationId
 
         ( eventCode, instanceId ) =
-            FS.Utils.toEventCode request.events
+            toEventCode request.events
 
         deltaXML =
-            FS.Utils.toDeltaXML request.delta
+            toDeltaXML request.delta
     in
         [ ( "in_applicationName_tx", request.applicationName )
         , ( "in_application_oid", (toString request.applicationId) )

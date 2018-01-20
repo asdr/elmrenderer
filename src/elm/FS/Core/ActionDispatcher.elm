@@ -1,14 +1,16 @@
-module FS.ActionDispatcher exposing (..)
+module FS.Core.ActionDispatcher exposing (..)
 
 import Debug
 import Dict exposing (Dict)
 import Http
 import Xml
-import Xml.Encode
-import Xml.Query
+import Xml.Encode exposing (null)
+import Xml.Query exposing (string, tags)
 import FS.Messages exposing (Msg)
 import FS.Models exposing (Model)
+import FS.Models.Actions exposing (Action(Action), ApplicationAction(ApplicationOpen))
 import FS.Models.Http exposing (Response)
+import FS.Update.Application as ApplicationUpdate
 
 
 dispatch : Model -> Result Http.Error Response -> ( Model, Cmd Msg )
@@ -17,7 +19,7 @@ dispatch model response =
         Result.Ok res ->
             let
                 actionList =
-                    Xml.Query.tags "action" (Maybe.withDefault Xml.Encode.null res.xml)
+                    tags "action" (Maybe.withDefault null res.xml)
 
                 sessionId =
                     Dict.get "SessionId" res.headers
@@ -52,16 +54,17 @@ dispatchActionNode model actionNode =
         Xml.Tag name attributes children ->
             let
                 objectTypeResult =
-                    Xml.Query.string (Maybe.withDefault (Xml.StrNode "") (Dict.get "objectType" attributes))
+                    string (Maybe.withDefault (Xml.StrNode "") (Dict.get "objectType" attributes))
 
                 methodResult =
-                    Xml.Query.string (Maybe.withDefault (Xml.StrNode "") (Dict.get "method" attributes))
+                    string (Maybe.withDefault (Xml.StrNode "") (Dict.get "method" attributes))
             in
                 case objectTypeResult of
                     Ok objectType ->
                         case methodResult of
                             Ok method ->
-                                Dict.remove "objectType" attributes
+                                attributes
+                                    |> Dict.remove "objectType"
                                     |> Dict.remove "method"
                                     |> dispatchAction model objectType method
 
@@ -75,6 +78,17 @@ dispatchActionNode model actionNode =
             model
 
 
-dispatchAction : Model -> String -> String -> Dict String a -> Model
+dispatchAction : Model -> String -> String -> Dict String Xml.Value -> Model
 dispatchAction model objectType method attributes =
-    Debug.log (objectType ++ "." ++ method ++ " - " ++ (toString attributes)) model
+    --Debug.log (objectType ++ "." ++ method ++ " - " ++ (toString attributes)) model
+    case objectType of
+        "Application" ->
+            case method of
+                "Open" ->
+                    ApplicationUpdate.update model (Action (ApplicationOpen attributes))
+
+                _ ->
+                    model
+
+        _ ->
+            model

@@ -2,7 +2,7 @@ module FS exposing (..)
 
 import Navigation exposing (Location)
 import FS.Models exposing (Model, initialModel)
-import FS.Models.Core exposing (Size)
+import FS.Models.Base exposing (Size)
 import FS.Commands exposing (fetchPlayers, openApplication)
 import FS.Messages exposing (Msg)
 import FS.Routing

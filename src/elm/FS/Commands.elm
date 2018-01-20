@@ -5,9 +5,10 @@ import Json.Decode as JsonDecode
 import Json.Decode.Pipeline exposing (decode, required, optional)
 import Json.Encode as Encode
 import RemoteData
-import FS.Http
+import FS.Core.Http exposing (createApplicationServletRequest)
 import FS.Messages exposing (Msg)
-import FS.Models.Core exposing (ObjectType(..), Event(Open), Player, initialApplication, nullValue, servletUrl)
+import FS.Models.Application exposing (Application(Application), initialApplication)
+import FS.Models.Base exposing (ObjectType(..), Event(Open), Player, nullValue, servletUrl)
 import FS.Models.Http exposing (Request)
 
 
@@ -26,7 +27,7 @@ openApplication applicationName =
             , sessionId = Nothing
             }
     in
-        FS.Http.createApplicationServletRequest request
+        createApplicationServletRequest request
             |> Http.send FS.Messages.OnFetchResponse
 
 
