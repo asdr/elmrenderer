@@ -1,16 +1,17 @@
-module FS.Update.Application exposing (..)
+module FS.Update.Application exposing (update)
 
 import Dict exposing (Dict, keys)
 import List
 import Xml
+import Xml.Encode exposing (null)
 import Xml.Query
 import FS.Models exposing (Model)
 import FS.Models.Application exposing (Application(Application))
 import FS.Models.Actions exposing (Action(Action), ApplicationAction(ApplicationOpen))
 
 
-update : Model -> Action ApplicationAction -> Model
-update model action =
+update : Xml.Value -> Model -> Action ApplicationAction -> Model
+update response model action =
     case action of
         Action appAction ->
             case appAction of
@@ -20,8 +21,43 @@ update model action =
                             model.application
                     in
                         { model
-                            | application = updateApplicationModel application actionAttrs
+                            | application =
+                                (Dict.get "oid" actionAttrs
+                                    |> Maybe.withDefault (Xml.IntNode -1)
+                                    |> Xml.Query.int
+                                    |> Result.toMaybe
+                                    |> getAttributes response
+                                    |> updateApplicationModel application
+                                )
                         }
+
+
+getAttributes : Xml.Value -> Maybe Int -> Dict String Xml.Value
+getAttributes response maybeApplicationId =
+    case maybeApplicationId of
+        Nothing ->
+            Dict.empty
+
+        Just applicationId ->
+            let
+                appNode =
+                    Xml.Query.tags "logical" response
+                        |> List.head
+                        |> Maybe.withDefault null
+                        |> Xml.Query.tags "application"
+                        |> List.head
+            in
+                case appNode of
+                    Nothing ->
+                        Dict.empty
+
+                    Just node ->
+                        case node of
+                            Xml.Tag name attributes children ->
+                                attributes
+
+                            _ ->
+                                Dict.empty
 
 
 updateApplicationModel : Application -> Dict String Xml.Value -> Application
@@ -57,20 +93,40 @@ setProperty : String -> Maybe Xml.Value -> Application -> Application
 setProperty key value app =
     case value of
         Just theValue ->
-            let
-                intValue =
-                    Xml.Query.int theValue
-                        |> Result.toMaybe
-                        |> Maybe.withDefault -1
-            in
-                case app of
-                    Application props ->
-                        case key of
-                            "oid" ->
-                                Application { props | id = intValue }
+            case app of
+                Application props ->
+                    case key of
+                        "oid" ->
+                            Application
+                                { props
+                                    | id =
+                                        (Xml.Query.int theValue
+                                            |> Result.toMaybe
+                                            |> Maybe.withDefault -1
+                                        )
+                                }
 
-                            _ ->
-                                app
+                        "name" ->
+                            Application
+                                { props
+                                    | name =
+                                        (Xml.Query.string theValue
+                                            |> Result.toMaybe
+                                            |> Maybe.withDefault ""
+                                        )
+                                }
+
+                        "cssFile" ->
+                            Application
+                                { props
+                                    | cssFile =
+                                        (Xml.Query.string theValue
+                                            |> Result.toMaybe
+                                        )
+                                }
+
+                        _ ->
+                            app
 
         _ ->
             app

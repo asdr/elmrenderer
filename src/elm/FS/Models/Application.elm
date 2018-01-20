@@ -14,6 +14,7 @@ type alias ApplicationProperties common =
         | cssFile : Maybe String
         , language : ( String, String )
         , mainFrame : Maybe MainFrame
+        , events : List String
     }
 
 
@@ -27,5 +28,6 @@ initialApplication name =
             , cssFile = Nothing
             , language = ( "en", "US" )
             , mainFrame = Nothing
+            , events = []
             }
         )

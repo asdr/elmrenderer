@@ -1,6 +1,5 @@
 module FS.Core.ActionDispatcher exposing (..)
 
-import Debug
 import Dict exposing (Dict)
 import Http
 import Xml
@@ -18,20 +17,23 @@ dispatch model response =
     case response of
         Result.Ok res ->
             let
+                xml =
+                    (Maybe.withDefault null res.xml)
+
                 actionList =
-                    tags "action" (Maybe.withDefault null res.xml)
+                    tags "action" xml
 
                 sessionId =
                     Dict.get "SessionId" res.headers
             in
-                consumeActionList actionList { model | sessionId = sessionId }
+                consumeActionList xml actionList { model | sessionId = sessionId }
 
         Result.Err _ ->
             ( model, Cmd.none )
 
 
-consumeActionList : List Xml.Value -> Model -> ( Model, Cmd Msg )
-consumeActionList actionList model =
+consumeActionList : Xml.Value -> List Xml.Value -> Model -> ( Model, Cmd Msg )
+consumeActionList response actionList model =
     let
         head =
             List.head actionList
@@ -44,12 +46,12 @@ consumeActionList actionList model =
                 ( model, Cmd.none )
 
             Just action ->
-                dispatchActionNode model action
-                    |> consumeActionList rest
+                dispatchActionNode response model action
+                    |> consumeActionList response rest
 
 
-dispatchActionNode : Model -> Xml.Value -> Model
-dispatchActionNode model actionNode =
+dispatchActionNode : Xml.Value -> Model -> Xml.Value -> Model
+dispatchActionNode response model actionNode =
     case actionNode of
         Xml.Tag name attributes children ->
             let
@@ -66,7 +68,7 @@ dispatchActionNode model actionNode =
                                 attributes
                                     |> Dict.remove "objectType"
                                     |> Dict.remove "method"
-                                    |> dispatchAction model objectType method
+                                    |> dispatchAction response model objectType method
 
                             Err _ ->
                                 model
@@ -78,14 +80,14 @@ dispatchActionNode model actionNode =
             model
 
 
-dispatchAction : Model -> String -> String -> Dict String Xml.Value -> Model
-dispatchAction model objectType method attributes =
+dispatchAction : Xml.Value -> Model -> String -> String -> Dict String Xml.Value -> Model
+dispatchAction response model objectType method attributes =
     --Debug.log (objectType ++ "." ++ method ++ " - " ++ (toString attributes)) model
     case objectType of
         "Application" ->
             case method of
                 "Open" ->
-                    ApplicationUpdate.update model (Action (ApplicationOpen attributes))
+                    ApplicationUpdate.update response model (Action (ApplicationOpen attributes))
 
                 _ ->
                     model
