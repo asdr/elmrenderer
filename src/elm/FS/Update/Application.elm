@@ -5,8 +5,8 @@ import List
 import Xml
 import Xml.Encode exposing (null)
 import Xml.Query
-import FS.Models exposing (Model)
-import FS.Models.Application exposing (Application(Application))
+import FS.Models exposing (Model, updateBubble)
+import FS.Core.Types exposing (FormspiderType(Application), findObject)
 import FS.Models.Actions exposing (Action(Action), ApplicationAction(ApplicationOpen))
 
 
@@ -15,25 +15,30 @@ update response model action =
     case action of
         Action appAction ->
             case appAction of
-                ApplicationOpen actionAttrs ->
+                ApplicationOpen applicationId ->
                     let
-                        application =
-                            model.application
+                        maybeApplication =
+                            Debug.log "maybeApplication" (findObject (Debug.log "applicationId" applicationId) model.child)
                     in
-                        { model
-                            | application =
-                                (Dict.get "oid" actionAttrs
-                                    |> Maybe.withDefault (Xml.IntNode -1)
-                                    |> Xml.Query.int
-                                    |> Result.toMaybe
-                                    |> getAttributes response
-                                    |> updateApplicationModel application
-                                )
-                        }
+                        case maybeApplication of
+                            Nothing ->
+                                model
+
+                            Just application ->
+                                case application of
+                                    Application app ->
+                                        applicationId
+                                            |> getApplicationInformation response
+                                            |> updateApplicationModel application
+                                            |> Just
+                                            |> updateBubble model
+
+                                    _ ->
+                                        model
 
 
-getAttributes : Xml.Value -> Maybe Int -> Dict String Xml.Value
-getAttributes response maybeApplicationId =
+getApplicationInformation : Xml.Value -> Maybe Int -> Dict String Xml.Value
+getApplicationInformation response maybeApplicationId =
     case maybeApplicationId of
         Nothing ->
             Dict.empty
@@ -54,13 +59,13 @@ getAttributes response maybeApplicationId =
                     Just node ->
                         case node of
                             Xml.Tag name attributes children ->
-                                attributes
+                                Debug.log ("Children: " ++ (toString children)) attributes
 
                             _ ->
                                 Dict.empty
 
 
-updateApplicationModel : Application -> Dict String Xml.Value -> Application
+updateApplicationModel : FormspiderType -> Dict String Xml.Value -> FormspiderType
 updateApplicationModel app attributes =
     let
         attributeNames =
@@ -69,7 +74,7 @@ updateApplicationModel app attributes =
         updateModel attributeNames attributes app
 
 
-updateModel : List String -> Dict String Xml.Value -> Application -> Application
+updateModel : List String -> Dict String Xml.Value -> FormspiderType -> FormspiderType
 updateModel keys attributes app =
     let
         key =
@@ -89,7 +94,7 @@ updateModel keys attributes app =
                 |> updateModel rest attributes
 
 
-setProperty : String -> Maybe Xml.Value -> Application -> Application
+setProperty : String -> Maybe Xml.Value -> FormspiderType -> FormspiderType
 setProperty key value app =
     case value of
         Just theValue ->
@@ -127,6 +132,9 @@ setProperty key value app =
 
                         _ ->
                             app
+
+                _ ->
+                    app
 
         _ ->
             app

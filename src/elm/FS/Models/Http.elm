@@ -3,7 +3,8 @@ module FS.Models.Http exposing (..)
 import Dict exposing (Dict)
 import Http
 import Xml exposing (Value)
-import FS.Models.Base exposing (Event, ObjectType)
+import FS.Core.Types exposing (FormspiderType)
+import FS.Models.Base exposing (Event)
 import FS.Models.Delta exposing (Delta)
 
 
@@ -15,10 +16,10 @@ type alias RequestMethod =
     String
 
 
-type alias Request a =
+type alias Request =
     { applicationId : Int
     , applicationName : String
-    , objectType : ObjectType a
+    , formspiderObject : Maybe FormspiderType
     , delta : Delta
     , headers : List Http.Header
     , events : List Event

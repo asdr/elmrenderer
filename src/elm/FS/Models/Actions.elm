@@ -9,4 +9,8 @@ type Action a
 
 
 type ApplicationAction
-    = ApplicationOpen (Dict String Xml.Value)
+    = ApplicationOpen (Maybe Int)
+
+
+type MainFrameAction
+    = MainFrameInitialize (Maybe Int)

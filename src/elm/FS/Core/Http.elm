@@ -2,13 +2,13 @@ module FS.Core.Http exposing (..)
 
 import Http
 import Xml.Decode
-import FS.Models.Application exposing (Application(Application))
-import FS.Models.Base exposing (Event, ObjectType, nullValue, servletUrl)
+import FS.Models.Base exposing (Event, nullValue, servletUrl)
 import FS.Models.Http exposing (RequestURL, RequestMethod, Request, Response)
+import FS.Core.Types exposing (FormspiderType(Application))
 import FS.Core.Utils exposing (toEventCode, toDeltaXML)
 
 
-buildRequestBody : String -> String -> Request a -> Http.Body
+buildRequestBody : String -> String -> Request -> Http.Body
 buildRequestBody objectType objectDtlType request =
     let
         applicationId =
@@ -34,7 +34,7 @@ buildRequestBody objectType objectDtlType request =
             |> Http.formDataBody
 
 
-defaultRequestHeaders : Request a -> List Http.Header
+defaultRequestHeaders : Request -> List Http.Header
 defaultRequestHeaders request =
     let
         sessionId =
@@ -49,17 +49,44 @@ defaultRequestHeaders request =
                 []
 
 
-createServletRequest : Request a -> Http.Body -> Http.Request Response
-createServletRequest request body =
-    Http.request
-        { method = "POST"
-        , body = body
-        , expect = expectResponse responseDecoder
-        , headers = List.append (defaultRequestHeaders request) request.headers
-        , timeout = Nothing
-        , url = servletUrl
-        , withCredentials = False
-        }
+createServletRequest : Request -> Http.Request Response
+createServletRequest request =
+    let
+        objectType =
+            case request.formspiderObject of
+                Nothing ->
+                    "UNKNOWN"
+
+                Just fsObj ->
+                    case fsObj of
+                        Application _ ->
+                            "Application"
+
+                        _ ->
+                            "UNKNOWN"
+
+        requestBody =
+            case request.formspiderObject of
+                Nothing ->
+                    Http.stringBody "text/plain" ""
+
+                Just fsObj ->
+                    case fsObj of
+                        Application _ ->
+                            buildRequestBody objectType nullValue request
+
+                        _ ->
+                            Http.stringBody "text/plain" ""
+    in
+        Http.request
+            { method = "POST"
+            , body = requestBody
+            , expect = expectResponse responseDecoder
+            , headers = List.append (defaultRequestHeaders request) request.headers
+            , timeout = Nothing
+            , url = servletUrl
+            , withCredentials = False
+            }
 
 
 expectResponse : (Http.Response String -> Result String Response) -> Http.Expect Response
@@ -83,14 +110,3 @@ responseDecoder response =
             Xml.Decode.decode response.body
     in
         Result.Ok (Response url status headers (Result.toMaybe xml))
-
-
-buildApplicationRequestBody : Request Application -> Http.Body
-buildApplicationRequestBody request =
-    buildRequestBody "Application" nullValue request
-
-
-createApplicationServletRequest : Request Application -> Http.Request Response
-createApplicationServletRequest request =
-    buildApplicationRequestBody request
-        |> createServletRequest request

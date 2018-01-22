@@ -7,9 +7,10 @@ import Xml.Encode exposing (null)
 import Xml.Query exposing (string, tags)
 import FS.Messages exposing (Msg)
 import FS.Models exposing (Model)
-import FS.Models.Actions exposing (Action(Action), ApplicationAction(ApplicationOpen))
+import FS.Models.Actions exposing (Action(Action), ApplicationAction(ApplicationOpen), MainFrameAction(MainFrameInitialize))
 import FS.Models.Http exposing (Response)
 import FS.Update.Application as ApplicationUpdate
+import FS.Update.MainFrame as MainFrameUpdate
 
 
 dispatch : Model -> Result Http.Error Response -> ( Model, Cmd Msg )
@@ -82,15 +83,37 @@ dispatchActionNode response model actionNode =
 
 dispatchAction : Xml.Value -> Model -> String -> String -> Dict String Xml.Value -> Model
 dispatchAction response model objectType method attributes =
-    --Debug.log (objectType ++ "." ++ method ++ " - " ++ (toString attributes)) model
-    case objectType of
-        "Application" ->
-            case method of
-                "Open" ->
-                    ApplicationUpdate.update response model (Action (ApplicationOpen attributes))
+    let
+        maybeOidValue =
+            Dict.get "oid" attributes
 
-                _ ->
-                    model
+        maybeObjectId =
+            case maybeOidValue of
+                Nothing ->
+                    Nothing
 
-        _ ->
-            model
+                Just oidValue ->
+                    oidValue
+                        |> Xml.Query.int
+                        |> Result.toMaybe
+    in
+        case objectType of
+            "Application" ->
+                case method of
+                    "Open" ->
+                        ApplicationUpdate.update response model (Action (ApplicationOpen maybeObjectId))
+
+                    _ ->
+                        model
+
+            "MainFrame" ->
+                case method of
+                    "Initialize" ->
+                        MainFrameUpdate.update response model (Action (MainFrameInitialize maybeObjectId))
+
+                    --model
+                    _ ->
+                        model
+
+            _ ->
+                model

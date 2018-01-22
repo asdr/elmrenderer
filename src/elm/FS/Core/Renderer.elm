@@ -1,19 +1,27 @@
 module FS.Core.Renderer exposing (..)
 
 import Html exposing (..)
+import Html.Attributes as HA
+import FS.Core.Renderer.MainFrame as MainFrameRenderer
+import FS.Core.Types exposing (FormspiderType(Application))
 import FS.Messages exposing (Msg)
-import FS.Models.Http exposing (Response)
+import FS.Models exposing (Model)
 
 
-render : Response -> Html Msg
-render response =
+render : Model -> Html Msg
+render model =
     let
-        maybeXml =
-            response.xml
-    in
-        case maybeXml of
-            Nothing ->
-                div [] [ text "Nothing" ]
+        maybeMainFrame =
+            case model.child of
+                Nothing ->
+                    Nothing
 
-            Just xml ->
-                div [] [ text (toString xml) ]
+                Just formspiderObject ->
+                    case formspiderObject of
+                        Application aplicationProperties ->
+                            aplicationProperties.child
+
+                        _ ->
+                            Nothing
+    in
+        MainFrameRenderer.render maybeMainFrame

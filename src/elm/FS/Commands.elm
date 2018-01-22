@@ -5,10 +5,10 @@ import Json.Decode as JsonDecode
 import Json.Decode.Pipeline exposing (decode, required, optional)
 import Json.Encode as Encode
 import RemoteData
-import FS.Core.Http exposing (createApplicationServletRequest)
+import FS.Core.Http exposing (createServletRequest)
 import FS.Messages exposing (Msg)
-import FS.Models.Application exposing (Application(Application), initialApplication)
-import FS.Models.Base exposing (ObjectType(..), Event(Open), Player, nullValue, servletUrl)
+import FS.Core.Types exposing (FormspiderType(Application), initialApplication)
+import FS.Models.Base exposing (Event(Open), Player, nullValue, servletUrl)
 import FS.Models.Http exposing (Request)
 
 
@@ -18,7 +18,7 @@ openApplication applicationName =
         request =
             { applicationId = -1
             , applicationName = applicationName
-            , objectType = initialApplication applicationName
+            , formspiderObject = initialApplication applicationName
             , delta = []
             , headers = []
             , events = [ Open -1 ]
@@ -27,7 +27,7 @@ openApplication applicationName =
             , sessionId = Nothing
             }
     in
-        createApplicationServletRequest request
+        createServletRequest request
             |> Http.send FS.Messages.OnFetchResponse
 
 
@@ -84,7 +84,7 @@ playerDecoder =
         |> required "level" JsonDecode.int
 
 
-requestEncoder : Request a -> Encode.Value
+requestEncoder : Request -> Encode.Value
 requestEncoder request =
     Encode.object []
 

@@ -1,37 +1,32 @@
 module FS.View exposing (..)
 
 import FS.Models exposing (Model)
-import FS.Models.Application exposing (Application(Application))
 import FS.Models.Base exposing (Route(..))
 import FS.Messages exposing (Msg)
 import FS.Players.Edit
 import FS.Players.List
 import FS.Core.Renderer
 import Html exposing (Html, div, text)
+import Html.Attributes as Attributes
 import RemoteData
 
 
 view : Model -> Html Msg
 view model =
-    let
-        applicationProperties =
-            case model.application of
-                Application props ->
-                    props
-    in
-        div []
-            [ page model
-            , div
-                []
-                [ text (toString applicationProperties) ]
-            ]
+    render model
+
+
+render : Model -> Html Msg
+render model =
+    FS.Core.Renderer.render model
 
 
 page : Model -> Html Msg
 page model =
     case model.route of
         DefaultRoute ->
-            FS.Core.Renderer.render model.response
+            --FS.Core.Renderer.render model.response
+            notFoundView
 
         PlayersRoute ->
             FS.Players.List.view model.players

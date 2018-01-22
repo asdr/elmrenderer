@@ -46,31 +46,5 @@ type Route
     | NotFoundRoute
 
 
-type ObjectType a
-    = ObjectType a
-
-
 type Event
     = Open Int
-
-
-type alias CommonProperties =
-    { id : Int
-    , name : String
-    , objectType : String
-    }
-
-
-setId : Int -> CommonProperties -> CommonProperties
-setId id properties =
-    { properties | id = id }
-
-
-setName : String -> CommonProperties -> CommonProperties
-setName name properties =
-    { properties | name = name }
-
-
-setObjectType : String -> CommonProperties -> CommonProperties
-setObjectType objectType properties =
-    { properties | objectType = objectType }
