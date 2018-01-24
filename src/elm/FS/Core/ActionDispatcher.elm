@@ -7,7 +7,7 @@ import Xml.Encode exposing (null)
 import Xml.Query exposing (string, tags)
 import FS.Messages exposing (Msg)
 import FS.Models exposing (Model)
-import FS.Models.Actions exposing (Action(Action), ApplicationAction(ApplicationOpen), MainFrameAction(MainFrameInitialize))
+import FS.Models.Actions exposing (Action(Action), ApplicationAction(ApplicationOpen), MainFrameAction(MainFrameInitialize, MainFrameSetVisible))
 import FS.Models.Http exposing (Response)
 import FS.Update.Application as ApplicationUpdate
 import FS.Update.MainFrame as MainFrameUpdate
@@ -70,6 +70,10 @@ dispatchActionNode response model actionNode =
                                     |> Dict.remove "objectType"
                                     |> Dict.remove "method"
                                     |> dispatchAction response model objectType method
+                                    |> Debug.log
+                                        ("ActionDispatcher.dispatchActionNode - "
+                                            ++ method
+                                        )
 
                             Err _ ->
                                 model
@@ -111,7 +115,10 @@ dispatchAction response model objectType method attributes =
                     "Initialize" ->
                         MainFrameUpdate.update response model (Action (MainFrameInitialize maybeObjectId))
 
-                    --model
+                    "SetVisible" ->
+                        MainFrameUpdate.update response model (Action (MainFrameSetVisible maybeObjectId (Just False)))
+                            |> Debug.log "ActionDispatcher.dispatchAction - SetVisible"
+
                     _ ->
                         model
 

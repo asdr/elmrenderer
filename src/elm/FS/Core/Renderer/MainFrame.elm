@@ -23,9 +23,26 @@ render maybeFormspiderObject =
 
 renderMainFrame : MainFrameProperties CommonProperties -> Html Msg
 renderMainFrame properties =
-    div
-        [ HA.class "fs-mainframe"
-        , HA.name properties.name
-        , HA.id (toString properties.id)
-        ]
-        []
+    let
+        maybeTheme =
+            properties.theme
+
+        maybePanelObject =
+            properties.child
+
+        visible =
+            properties.visible
+
+        attributes =
+            HA.class "fs-mainframe"
+                :: HA.name properties.name
+                :: HA.id (toString properties.id)
+                :: []
+    in
+        (if visible == False then
+            div (List.append [ HA.style [ ( "display", "none" ) ] ] attributes)
+         else
+            div attributes
+        )
+        <|
+            []

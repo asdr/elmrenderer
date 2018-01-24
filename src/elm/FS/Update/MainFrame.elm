@@ -3,9 +3,9 @@ module FS.Update.MainFrame exposing (update)
 import Dict exposing (Dict)
 import Xml
 import Xml.Query exposing (tags)
-import FS.Core.Types exposing (CommonProperties, MainFrameProperties, FormspiderType(MainFrame), findObject, mainFrame)
+import FS.Core.Types exposing (CommonProperties, MainFrameProperties, FormspiderType(Application, MainFrame), findObject, mainFrame)
 import FS.Models exposing (Model, updateBubble)
-import FS.Models.Actions exposing (Action(Action), MainFrameAction(MainFrameInitialize))
+import FS.Models.Actions exposing (Action(Action), MainFrameAction(MainFrameInitialize, MainFrameSetVisible))
 import FS.Update.Panel as PanelUpdate
 
 
@@ -14,25 +14,78 @@ update response model action =
     case action of
         Action appAction ->
             case appAction of
-                MainFrameInitialize mfId ->
+                MainFrameInitialize maybeId ->
                     let
                         maybeMainFrame =
-                            Debug.log "maybeMainFrame" (findObject (Debug.log "mainFrameId" mfId) model.child)
+                            findObject maybeId model.child
                     in
                         case maybeMainFrame of
                             Nothing ->
-                                initialize response mfId
-                                    |> updateBubble model
+                                case maybeId of
+                                    Nothing ->
+                                        model
+
+                                    Just id ->
+                                        let
+                                            maybeInitializedMainFrame =
+                                                initialize response maybeId
+                                        in
+                                            case maybeInitializedMainFrame of
+                                                Nothing ->
+                                                    model
+
+                                                Just initializedMainFrame ->
+                                                    { model
+                                                        | initializedObjects = Dict.insert id initializedMainFrame model.initializedObjects
+                                                    }
 
                             Just mainFrame ->
-                                case mainFrame of
-                                    MainFrame props ->
-                                        MainFrame { props | id = 100 }
-                                            |> Just
-                                            |> updateBubble model
+                                model
 
-                                    _ ->
+                MainFrameSetVisible maybeId maybeVisible ->
+                    case maybeId of
+                        Nothing ->
+                            model
+
+                        Just id ->
+                            let
+                                maybeInitializedMainFrame =
+                                    Dict.get id model.initializedObjects
+                            in
+                                case maybeInitializedMainFrame of
+                                    Nothing ->
                                         model
+
+                                    Just initializedMainFrame ->
+                                        case initializedMainFrame of
+                                            MainFrame props ->
+                                                let
+                                                    modifiedMainFrame =
+                                                        MainFrame { props | visible = Maybe.withDefault True maybeVisible }
+
+                                                    maybeApplicationObject =
+                                                        model.child
+                                                in
+                                                    case maybeApplicationObject of
+                                                        Nothing ->
+                                                            model
+
+                                                        Just applicationObject ->
+                                                            case applicationObject of
+                                                                Application props ->
+                                                                    let
+                                                                        modifiedApplication =
+                                                                            Application { props | child = Just modifiedMainFrame }
+                                                                    in
+                                                                        { model
+                                                                            | child = Just modifiedApplication
+                                                                        }
+
+                                                                _ ->
+                                                                    model
+
+                                            _ ->
+                                                model
 
 
 initialize : Xml.Value -> Maybe Int -> Maybe FormspiderType
@@ -133,6 +186,13 @@ initializeObject attributes child =
         maybeName =
             attributes
                 |> Dict.get ("name")
+                |> Maybe.withDefault (Xml.StrNode "")
+                |> Xml.Query.string
+                |> Result.toMaybe
+
+        maybeViisble =
+            attributes
+                |> Dict.get ("display")
                 |> Maybe.withDefault (Xml.StrNode "")
                 |> Xml.Query.string
                 |> Result.toMaybe

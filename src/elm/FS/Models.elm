@@ -15,8 +15,7 @@ type alias Model =
     , players : WebData (List Player)
     , route : Route
     , sessionId : Maybe String
-
-    --, response : FS.Models.Http.Response
+    , initializedObjects : Dict Int FormspiderType
     , child : Maybe FormspiderType
     }
 
@@ -37,6 +36,7 @@ initialModel operatingSystem url screenSize applicationName route =
     --    , headers = Dict.empty
     --    , xml = Nothing
     --    }
+    , initializedObjects = Dict.empty
     , child = initialApplication applicationName
     }
 
@@ -53,49 +53,62 @@ findParentObject maybeObject maybeRoot =
         maybeChild =
             getChild maybeRoot
     in
-        case maybeId of
+        case maybeObject of
             Nothing ->
                 Nothing
 
-            Just id ->
-                let
-                    maybeChildId =
-                        getId maybeChild
-                in
-                    case maybeChildId of
-                        -- Nothing
-                        Nothing ->
-                            case maybeRootId of
-                                Nothing ->
-                                    Nothing
+            Just object ->
+                case object of
+                    Application props ->
+                        Nothing
 
-                                Just rootId ->
-                                    if id == rootId || rootId == -1 then
-                                        Nothing
-                                    else
-                                        maybeRoot
+                    _ ->
+                        case maybeId of
+                            Nothing ->
+                                Nothing
 
-                        Just childId ->
-                            if id == childId then
-                                maybeRoot
-                            else
-                                findParentObject maybeObject maybeChild
+                            Just id ->
+                                let
+                                    maybeChildId =
+                                        getId maybeChild
+                                in
+                                    case maybeChildId of
+                                        -- Nothing
+                                        Nothing ->
+                                            --case maybeRootId of
+                                            --    Nothing ->
+                                            --        Nothing
+                                            --    Just rootId ->
+                                            --        if id == rootId || rootId == -1 then
+                                            --            Nothing
+                                            --        else
+                                            --            maybeRoot
+                                            Nothing
+
+                                        Just childId ->
+                                            if id == childId then
+                                                maybeRoot
+                                            else
+                                                findParentObject maybeObject maybeChild
 
 
-findParent : Maybe FormspiderType -> Model -> Maybe FormspiderType
-findParent obj model =
+findParent : Model -> Maybe FormspiderType -> Maybe FormspiderType
+findParent model obj =
     let
         root =
             model.child
     in
-        findParentObject (Debug.log "obj" obj) (Debug.log "root" root)
+        findParentObject obj root
 
 
 updateBubble : Model -> Maybe FormspiderType -> Model
 updateBubble model maybeObject =
     let
         maybeParent =
-            Debug.log "maybeParent" <| findParent maybeObject model
+            maybeObject
+                |> Debug.log "Models.updateBubble - child to find parent "
+                |> findParent model
+                |> Debug.log "Models.updateBubble - parent"
     in
         case maybeParent of
             Nothing ->
@@ -107,8 +120,12 @@ updateBubble model maybeObject =
                         case object of
                             Application appProps ->
                                 { model
-                                    | child = Just (Application appProps)
+                                    | child =
+                                        (Application appProps)
+                                            |> Debug.log "Models.updateBubble - application to set"
+                                            |> Just
                                 }
+                                    |> Debug.log "Models.updateBubble - model after set"
 
                             _ ->
                                 model
@@ -118,7 +135,9 @@ updateBubble model maybeObject =
                     Application parentObj ->
                         Application
                             { parentObj
-                                | child = maybeObject
+                                | child =
+                                    maybeObject
+                                        |> Debug.log "Models.updateBubble - mainframe to set"
                             }
                             |> Just
                             |> updateBubble model
