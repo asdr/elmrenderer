@@ -37,3 +37,18 @@ toEventCode events =
 toDeltaXML : Delta -> String
 toDeltaXML delta =
     """<delta><application rendererVersion="1.9.0" rendererType="JS" os.name="MacIntel" url="http://formspideronline.com:60060/formspider/" screenWidth="1440" screenHeight="144"/></delta>"""
+
+
+toBooleanFromYN : Maybe String -> Maybe Bool
+toBooleanFromYN maybeValue =
+    case maybeValue of
+        Nothing ->
+            Nothing
+
+        Just value ->
+            case value of
+                "Y" ->
+                    Just True
+
+                _ ->
+                    Just False

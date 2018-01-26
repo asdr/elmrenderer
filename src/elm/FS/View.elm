@@ -18,7 +18,9 @@ view model =
 
 render : Model -> Html Msg
 render model =
-    FS.Core.Renderer.render model
+    model
+        |> Debug.log "Model before view "
+        |> FS.Core.Renderer.render
 
 
 page : Model -> Html Msg

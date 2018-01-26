@@ -5,6 +5,7 @@ import Http
 import Xml
 import Xml.Encode exposing (null)
 import Xml.Query exposing (string, tags)
+import FS.Core.Utils exposing (toBooleanFromYN)
 import FS.Messages exposing (Msg)
 import FS.Models exposing (Model)
 import FS.Models.Actions exposing (Action(Action), ApplicationAction(ApplicationOpen), MainFrameAction(MainFrameInitialize, MainFrameSetVisible))
@@ -88,11 +89,8 @@ dispatchActionNode response model actionNode =
 dispatchAction : Xml.Value -> Model -> String -> String -> Dict String Xml.Value -> Model
 dispatchAction response model objectType method attributes =
     let
-        maybeOidValue =
-            Dict.get "oid" attributes
-
         maybeObjectId =
-            case maybeOidValue of
+            case (Dict.get "oid" attributes) of
                 Nothing ->
                     Nothing
 
@@ -116,8 +114,20 @@ dispatchAction response model objectType method attributes =
                         MainFrameUpdate.update response model (Action (MainFrameInitialize maybeObjectId))
 
                     "SetVisible" ->
-                        MainFrameUpdate.update response model (Action (MainFrameSetVisible maybeObjectId (Just False)))
-                            |> Debug.log "ActionDispatcher.dispatchAction - SetVisible"
+                        let
+                            maybeValue =
+                                case (Dict.get "value" attributes) of
+                                    Nothing ->
+                                        Nothing
+
+                                    Just value ->
+                                        value
+                                            |> Xml.Query.string
+                                            |> Result.toMaybe
+                                            |> toBooleanFromYN
+                        in
+                            MainFrameUpdate.update response model (Action (MainFrameSetVisible maybeObjectId maybeValue))
+                                |> Debug.log "ActionDispatcher.dispatchAction - SetVisible"
 
                     _ ->
                         model

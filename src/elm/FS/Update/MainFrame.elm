@@ -12,8 +12,8 @@ import FS.Update.Panel as PanelUpdate
 update : Xml.Value -> Model -> Action MainFrameAction -> Model
 update response model action =
     case action of
-        Action appAction ->
-            case appAction of
+        Action mainFrameAction ->
+            case mainFrameAction of
                 MainFrameInitialize maybeId ->
                     let
                         maybeMainFrame =
@@ -27,16 +27,16 @@ update response model action =
 
                                     Just id ->
                                         let
-                                            maybeInitializedMainFrame =
-                                                initialize response maybeId
+                                            ( modifiedModel, maybeInitializedMainFrame ) =
+                                                initialize response model maybeId
                                         in
                                             case maybeInitializedMainFrame of
                                                 Nothing ->
                                                     model
 
                                                 Just initializedMainFrame ->
-                                                    { model
-                                                        | initializedObjects = Dict.insert id initializedMainFrame model.initializedObjects
+                                                    { modifiedModel
+                                                        | initializedObjects = Dict.insert id initializedMainFrame modifiedModel.initializedObjects
                                                     }
 
                             Just mainFrame ->
@@ -88,11 +88,11 @@ update response model action =
                                                 model
 
 
-initialize : Xml.Value -> Maybe Int -> Maybe FormspiderType
-initialize response maybeMainFrameId =
+initialize : Xml.Value -> Model -> Maybe Int -> ( Model, Maybe FormspiderType )
+initialize response model maybeMainFrameId =
     case maybeMainFrameId of
         Nothing ->
-            Nothing
+            ( model, Nothing )
 
         Just mainFrameId ->
             let
@@ -125,14 +125,14 @@ initialize response maybeMainFrameId =
                             )
                         |> List.head
             in
-                initializeMainFrame response maybeMainFrameTag
+                initializeMainFrame response model maybeMainFrameTag
 
 
-initializeMainFrame : Xml.Value -> Maybe Xml.Value -> Maybe FormspiderType
-initializeMainFrame response maybeMainFrameTag =
+initializeMainFrame : Xml.Value -> Model -> Maybe Xml.Value -> ( Model, Maybe FormspiderType )
+initializeMainFrame response model maybeMainFrameTag =
     case maybeMainFrameTag of
         Nothing ->
-            Nothing
+            ( model, Nothing )
 
         Just mainFrameTag ->
             case mainFrameTag of
@@ -157,20 +157,23 @@ initializeMainFrame response maybeMainFrameTag =
                                         in
                                             case maybePanelId of
                                                 Nothing ->
-                                                    initializeObject attributes Nothing
+                                                    ( model, initializeObject attributes Nothing )
 
                                                 Just panelId ->
-                                                    PanelUpdate.initialize response maybePanelId
-                                                        |> initializeObject attributes
+                                                    let
+                                                        ( modifiedModel, maybeInitializedPanel ) =
+                                                            PanelUpdate.initialize response model maybePanelId
+                                                    in
+                                                        ( modifiedModel, initializeObject attributes maybeInitializedPanel )
 
                                     _ ->
-                                        initializeObject attributes Nothing
+                                        ( model, initializeObject attributes Nothing )
 
                             Nothing ->
-                                initializeObject attributes Nothing
+                                ( model, initializeObject attributes Nothing )
 
                 _ ->
-                    Nothing
+                    ( model, Nothing )
 
 
 initializeObject : Dict String Xml.Value -> Maybe FormspiderType -> Maybe FormspiderType
@@ -189,13 +192,6 @@ initializeObject attributes child =
                 |> Maybe.withDefault (Xml.StrNode "")
                 |> Xml.Query.string
                 |> Result.toMaybe
-
-        maybeViisble =
-            attributes
-                |> Dict.get ("display")
-                |> Maybe.withDefault (Xml.StrNode "")
-                |> Xml.Query.string
-                |> Result.toMaybe
     in
         case maybeId of
             Nothing ->
@@ -207,4 +203,4 @@ initializeObject attributes child =
                         Nothing
 
                     Just name ->
-                        mainFrame id name [] True Nothing child
+                        mainFrame id name [] False Nothing child
